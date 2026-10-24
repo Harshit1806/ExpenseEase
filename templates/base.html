@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ExpenseEase{% endblock %}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% block head_extra %}{% endblock %}
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+
+  <!-- Mobile navigation backdrop -->
+  <div id="mobileBackdrop"
+       class="fixed inset-0 z-40 hidden bg-slate-900/40 lg:hidden"></div>
+
+  <div class="min-h-screen lg:flex">
+
+    <!-- Shared sidebar -->
+    <aside id="sidebar"
+      class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
+
+      <div class="flex h-20 shrink-0 items-center justify-between border-b border-slate-100 px-6">
+        <a href="{{ url_for('home') }}" class="text-xl font-bold tracking-tight text-slate-900">
+          Expense<span class="text-blue-600">Ease</span>
+        </a>
+        <button id="closeSidebar" type="button"
+          class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+          aria-label="Close navigation">✕</button>
+      </div>
+
+      <nav class="flex-1 space-y-1 px-4 py-6" aria-label="Main navigation">
+        {% set nav_items = [
+          ('home', 'Dashboard', '▦'),
+          ('add_expense_page', 'Add expense', '＋'),
+          ('transactions', 'Transactions', '☷'),
+          ('analytics', 'Analytics & Charts', '▥'),
+          ('settings', 'Settings', '⚙'),
+          ('profile', 'My Profile', '○')
+        ] %}
+
+        {% for endpoint, label, symbol in nav_items %}
+          <a href="{{ url_for(endpoint) }}"
+             {% if request.endpoint == endpoint %}aria-current="page"{% endif %}
+             class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition
+             {% if request.endpoint == endpoint %}
+               bg-blue-50 font-semibold text-blue-700
+             {% else %}
+               font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900
+             {% endif %}">
+            <span class="w-5 text-center text-lg">{{ symbol }}</span>
+            {{ label }}
+          </a>
+        {% endfor %}
+      </nav>
+
+      <div class="m-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+        <p class="text-sm font-semibold text-slate-900">Small steps add up</p>
+        <p class="mt-1 text-xs leading-5 text-slate-600">
+          Keep your expenses organized and understand your spending.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main application area -->
+    <div class="min-w-0 flex-1">
+
+      <!-- Shared top bar -->
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
+
+          <div class="flex items-center gap-3">
+            <button id="openSidebar" type="button"
+              class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 lg:hidden"
+              aria-label="Open navigation" aria-expanded="false">
+              ☰
+            </button>
+
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wider text-slate-500">
+                Personal finance
+              </p>
+              <h1 class="text-lg font-bold text-slate-900 sm:text-xl">
+                {% block page_heading %}ExpenseEase{% endblock %}
+              </h1>
+            </div>
+          </div>
+
+          <!-- Shared profile dropdown -->
+          <div class="relative">
+            <button id="profileButton" type="button"
+              aria-expanded="false" aria-controls="profileMenu"
+              class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-50 sm:gap-3">
+
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+                {{ (site_profile.display_name[:2] | upper) if site_profile and site_profile.display_name else 'ME' }}
+              </span>
+
+              <span class="hidden max-w-36 text-left sm:block">
+                <span class="block truncate text-sm font-semibold text-slate-800">
+                  {{ site_profile.display_name if site_profile else 'My Profile' }}
+                </span>
+                <span class="block text-xs text-slate-500">Personal account</span>
+              </span>
+              <span class="text-slate-500">⌄</span>
+            </button>
+
+            <div id="profileMenu"
+              class="absolute right-0 z-40 mt-2 hidden w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+
+              <a href="{{ url_for('profile') }}"
+                class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                Profile details
+              </a>
+
+              <a href="{{ url_for('settings') }}"
+                class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                Settings
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Shared flash messages and page content -->
+      <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-2" aria-live="polite">
+              {% for category, message in messages %}
+                <div class="rounded-xl border px-4 py-3 text-sm
+                  {% if category == 'success' %}
+                    border-emerald-200 bg-emerald-50 text-emerald-800
+                  {% else %}
+                    border-rose-200 bg-rose-50 text-rose-800
+                  {% endif %}">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+        <footer class="py-3 text-center text-xs text-slate-400">
+          ExpenseEase · Simple tracking for everyday spending
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Profile dropdown
+    const profileButton = document.getElementById("profileButton");
+    const profileMenu = document.getElementById("profileMenu");
+
+    if (profileButton && profileMenu) {
+      profileButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        const opening = profileMenu.classList.contains("hidden");
+        profileMenu.classList.toggle("hidden", !opening);
+        profileButton.setAttribute("aria-expanded", String(opening));
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!profileMenu.contains(event.target) &&
+            !profileButton.contains(event.target)) {
+          profileMenu.classList.add("hidden");
+          profileButton.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          profileMenu.classList.add("hidden");
+          profileButton.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    // Responsive mobile sidebar
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("mobileBackdrop");
+    const openSidebar = document.getElementById("openSidebar");
+    const closeSidebar = document.getElementById("closeSidebar");
+
+    function setSidebarOpen(open) {
+      sidebar.classList.toggle("-translate-x-full", !open);
+      backdrop.classList.toggle("hidden", !open);
+      if (openSidebar) openSidebar.setAttribute("aria-expanded", String(open));
+    }
+
+    if (openSidebar) openSidebar.addEventListener("click", () => setSidebarOpen(true));
+    if (closeSidebar) closeSidebar.addEventListener("click", () => setSidebarOpen(false));
+    if (backdrop) backdrop.addEventListener("click", () => setSidebarOpen(false));
+
+    if (sidebar) {
+      sidebar.querySelectorAll("nav a").forEach(link => {
+        link.addEventListener("click", () => setSidebarOpen(false));
+      });
+    }
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    });
+  </script>
+
+  {% block body_end %}{% endblock %}
+</body>
+</html>

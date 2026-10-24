@@ -1,0 +1,218 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transactions · ExpenseEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm font-medium text-blue-600">EXPENSEEASE</p>
+        <h1 class="mt-1 text-3xl font-bold">Transactions</h1>
+        <p class="mt-2 text-sm text-slate-500">View, edit, and manage your expenses.</p>
+      </div>
+      <a href="{{ url_for('home') }}"
+         class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-100">
+        ← Dashboard
+      </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-5 space-y-2">
+          {% for category, message in messages %}
+            <div class="rounded-xl border px-4 py-3 text-sm
+              {% if category == 'success' %}
+                border-emerald-200 bg-emerald-50 text-emerald-800
+              {% else %}
+                border-rose-200 bg-rose-50 text-rose-800
+              {% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <form method="GET" action="{{ url_for('transactions') }}"
+            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="text-sm font-medium">
+          Search description
+          <input name="search" value="{{ search|default('') }}"
+                 placeholder="e.g. Groceries"
+                 class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-normal">
+        </label>
+
+        <label class="text-sm font-medium">
+          Category
+          <select name="category"
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal">
+            <option value="">All categories</option>
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="text-sm font-medium">
+          Month
+          <select name="month"
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal">
+            <option value="">All months</option>
+            {% for m in range(1, 13) %}
+              <option value="{{ m }}" {% if selected_month|string == m|string %}selected{% endif %}>
+                {{ ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m-1] }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="text-sm font-medium">
+          Year
+          <select name="year"
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-normal">
+            <option value="">All years</option>
+            {% for y in range(2020, 2031) %}
+              <option value="{{ y }}" {% if selected_year|string == y|string %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <div class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
+          <button type="submit"
+                  class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+            Apply filters
+          </button>
+          <a href="{{ url_for('transactions') }}"
+             class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">
+            Reset
+          </a>
+        </div>
+      </form>
+    </section>
+
+    <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
+        <div>
+          <h2 class="font-semibold">All expenses</h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ expenses|length }} record(s) · Total ₹{{ '%.2f'|format(total) }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <a href="{{ url_for('export_csv', **request.args.to_dict()) }}"
+             class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+            ↓ Export CSV
+          </a>
+          <a href="{{ url_for('export_excel', **request.args.to_dict()) }}"
+             class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+            ↓ Export Excel
+          </a>
+          <a href="{{ url_for('home') }}#add-expense"
+             class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+            + Add expense
+          </a>
+        </div>
+      </div>
+
+      <form id="bulkDeleteForm" method="POST"
+            action="{{ url_for('delete_multiple') }}"
+            onsubmit="return confirmBulkDelete();">
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr>
+                <th class="px-4 py-4"><input type="checkbox" id="selectAll" aria-label="Select all"></th>
+                <th class="px-4 py-4">Date</th>
+                <th class="px-4 py-4">Description</th>
+                <th class="px-4 py-4">Category</th>
+                <th class="px-4 py-4">Payment Method</th>
+                <th class="px-4 py-4 text-right">Amount</th>
+                <th class="px-4 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for e in expenses %}
+                <tr class="hover:bg-slate-50">
+                  <td class="px-4 py-4">
+                    <input type="checkbox" name="expense_ids" value="{{ e.id }}" class="expense-checkbox">
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-4 text-slate-500">
+                    {{ e.date.strftime('%d %b %Y') if e.date else '' }}
+                  </td>
+                  <td class="px-4 py-4 font-semibold">{{ e.description }}</td>
+                  <td class="px-4 py-4">{{ e.category }}</td>
+                  <td class="px-4 py-4">
+                    <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                      {{ e.payment_method or 'Cash' }}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-4 text-right font-semibold">
+                    ₹{{ '%.2f'|format(e.amount) }}
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-4 text-right">
+                    <a href="{{ url_for('edit', expense_id=e.id) }}"
+                       class="mr-2 font-semibold text-blue-600 hover:underline">Edit</a>
+                    <button type="button"
+                            onclick="deleteOne({{ e.id }}, {{ e.description|tojson }})"
+                            class="font-semibold text-rose-600 hover:underline">Delete</button>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="7" class="px-4 py-12 text-center text-slate-500">
+                    No expenses found. Try changing the filters or add an expense.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-4">
+          <span class="text-sm text-slate-500">Select records to delete multiple expenses.</span>
+          <button type="submit"
+                  class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50">
+            Delete selected
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <form id="singleDeleteForm" method="POST" class="hidden"></form>
+  </main>
+
+  <script>
+    const selectAll = document.getElementById("selectAll");
+    const boxes = Array.from(document.querySelectorAll(".expense-checkbox"));
+
+    if (selectAll) {
+      selectAll.addEventListener("change", () => {
+        boxes.forEach(box => box.checked = selectAll.checked);
+      });
+    }
+
+    function confirmBulkDelete() {
+      const count = boxes.filter(box => box.checked).length;
+      if (!count) {
+        alert("Please select at least one expense.");
+        return false;
+      }
+      return confirm(`Delete ${count} selected expense(s)? This cannot be undone.`);
+    }
+
+    function deleteOne(id, description) {
+      if (!confirm(`Delete "${description}"? This cannot be undone.`)) return;
+      const form = document.getElementById("singleDeleteForm");
+      form.action = "{{ url_for('delete', expense_id=0) }}".replace(/0$/, String(id));
+      form.submit();
+    }
+  </script>
+</body>
+</html>
+```

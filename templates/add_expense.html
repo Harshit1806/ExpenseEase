@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add Expense · ExpenseEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <main class="mx-auto max-w-2xl px-4 py-10">
+    <a href="{{ url_for('home') }}" class="text-sm font-semibold text-blue-600">
+      ← Back to Dashboard
+    </a>
+
+    <section class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h1 class="text-2xl font-bold">Add an expense</h1>
+      <p class="mt-2 text-sm text-slate-500">Record a new transaction.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <p class="mt-4 rounded-xl bg-blue-50 p-3 text-sm">{{ message }}</p>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('add') }}" class="mt-6 space-y-5">
+        <label class="block text-sm font-medium">
+          Description
+          <input name="description" maxlength="120" required
+                 placeholder="e.g. Groceries"
+                 class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+        </label>
+
+        <label class="block text-sm font-medium">
+          Amount (₹)
+          <input name="amount" type="number" min="0.01" step="0.01" required
+                 placeholder="500.00"
+                 class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+        </label>
+
+        <label class="block text-sm font-medium">
+          Date
+          <input name="date" type="date" value="{{ today }}" required
+                 class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+        </label>
+
+        <label class="block text-sm font-medium">
+          Category
+          <select name="category" required
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3">
+            {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <!-- Payment Method -->
+        <label class="block text-sm font-medium">
+          Payment Method
+          <select name="payment_method" required
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Net Banking">Net Banking</option>
+            <option value="Online Payment">Online Payment</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+
+        <button type="submit"
+                class="w-full rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700">
+          Save expense
+        </button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

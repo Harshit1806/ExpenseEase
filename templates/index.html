@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ExpenseEase · Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: "#2563eb", soft: "#eff6ff" }
+          },
+          boxShadow: {
+            card: "0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03)"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+  <div class="min-h-screen lg:flex">
+    <!-- Sidebar -->
+    <aside class="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+      <div class="flex h-20 items-center gap-3 border-b border-slate-100 px-6">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="3.5" y="6" width="17" height="14" rx="2.5"></rect>
+            <path d="M7 6V4.8A1.8 1.8 0 0 1 8.8 3h6.4A1.8 1.8 0 0 1 17 4.8V6M3.5 11h17M15.5 15h2"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="text-lg font-bold tracking-tight text-slate-900">Expense<span class="text-blue-600">Ease</span></div>
+          <div class="text-xs text-slate-500">Personal finance</div>
+        </div>
+      </div>
+
+      
+<nav class="flex-1 space-y-1 px-4 py-6" aria-label="Main navigation">
+
+  <a href="{{ url_for('home') }}"
+     class="flex items-center gap-3 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+    <span>▦</span> Dashboard
+  </a>
+
+  <a href="{{ url_for('add_expense_page') }}"
+     class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+    <span>⊕</span> Add expense
+  </a>
+
+  <a href="{{ url_for('transactions') }}"
+     class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+    <span>☷</span> Transactions
+  </a>
+
+  <a href="{{ url_for('analytics') }}"
+     class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+    <span>▥</span> Analytics & Charts
+  </a>
+
+  <a href="{{ url_for('settings') }}"
+     class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+    <span>⚙</span> Settings
+  </a>
+
+
+</nav>
+
+
+      <div class="m-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+        <div class="mb-1 text-sm font-semibold text-slate-900">Small steps add up</div>
+        <p class="text-xs leading-5 text-slate-600">Keep your expenses organized and make your spending easier to understand.</p>
+      </div>
+    </aside>
+
+    <main class="min-w-0 flex-1">
+      <!-- Top bar -->
+      <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          
+<div class="flex items-center gap-3">
+  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white lg:hidden">
+    <span class="text-sm font-bold">EE</span>
+  </div>
+  <div>
+    <p class="text-xs font-medium uppercase tracking-wider text-slate-500">
+      Personal finance
+    </p>
+    <h1 class="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+      Dashboard
+    </h1>
+  </div>
+</div>
+
+<!-- Profile on the right -->
+<div class="relative">
+  <button
+    id="profileButton"
+    type="button"
+    aria-expanded="false"
+    aria-controls="profileMenu"
+    class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-50"
+  >
+    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+      HS
+    </div>
+    <div class="hidden text-left sm:block">
+      <p class="text-sm font-semibold text-slate-800">
+  {{ site_profile.display_name if site_profile else 'My Profile' }}
+</p>
+      <p class="text-xs text-slate-500">Personal account</p>
+    </div>
+    <svg
+      viewBox="0 0 24 24"
+      class="h-4 w-4 text-slate-500"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="m7 10 5 5 5-5"></path>
+    </svg>
+  </button>
+
+  <div
+    id="profileMenu"
+    class="absolute right-0 z-30 mt-2 hidden w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+  >
+    <div class="border-b border-slate-100 px-3 py-2">
+      <p class="text-sm font-semibold text-slate-900">
+  {{ site_profile.display_name if site_profile else 'My Profile' }}
+</p>
+      <p class="text-xs text-slate-500">ExpenseEase account</p>
+    </div>
+    <a href="{{ url_for('profile') }}" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+      Profile details
+    </a>
+    <a href="{{ url_for('settings') }}" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+      Settings
+    </a>
+  </div>
+</div>
+
+      </header>
+
+      <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-2" aria-live="polite">
+              {% for category, message in messages %}
+                <div class="flash-message flex items-start gap-3 rounded-xl border px-4 py-3 text-sm
+                  {% if category == 'success' %}
+                    border-emerald-200 bg-emerald-50 text-emerald-800
+                  {% else %}
+                    border-rose-200 bg-rose-50 text-rose-800
+                  {% endif %}">
+                  <span class="font-semibold">{% if category == 'success' %}Success{% else %}Notice{% endif %}</span>
+                  <span>{{ message }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Welcome -->
+        <section class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Your money, at a glance</h2>
+            <p class="mt-1 text-sm text-slate-500">Review your spending and keep every expense in check.</p>
+          </div>
+          <p class="text-sm text-slate-500">All amounts in <span class="font-semibold text-slate-700">INR (₹)</span></p>
+        </section>
+
+        <!-- Summary cards (based on current filtered expenses, matching existing backend total) -->
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Expense summary">
+          <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500">Total expenses shown</p>
+                <p class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">₹{{ '%.2f'|format(total) }}</p>
+                <p class="mt-2 text-xs text-slate-500">Based on your current filters</p>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v18M17 7.5c0-1.4-1.8-2.5-4-2.5s-4 1.1-4 2.5 1.8 2.5 4 2.5 4 1.1 4 2.5-1.8 2.5-4 2.5-4-1.1-4-2.5"></path></svg>
+              </div>
+            </div>
+          </article>
+          <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500">Transactions shown</p>
+                <p class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{{ expenses|length }}</p>
+                <p class="mt-2 text-xs text-slate-500">Matching the selected filters</p>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M8 7h8M8 11h8M8 15h4"></path></svg>
+              </div>
+            </div>
+          </article>
+          <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card sm:col-span-2 xl:col-span-1">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500">Most recent expense</p>
+                <p class="mt-3 text-xl font-bold tracking-tight text-slate-900">{% if expenses %}{{ expenses[0].description }}{% else %}No expenses yet{% endif %}</p>
+                <p class="mt-2 text-xs text-slate-500">{% if expenses %}{{ expenses[0].date.strftime('%d %b %Y') if expenses[0].date else '' }}{% else %}Add your first transaction below{% endif %}</p>
+              </div>
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"></path><circle cx="12" cy="12" r="9"></circle></svg>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Filters + Add Expense -->
+        <section class="grid grid-cols-1 gap-6 xl:grid-cols-5">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card xl:col-span-3">
+            <div class="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h3 class="font-semibold text-slate-900">Filter expenses</h3>
+                <p class="mt-1 text-sm text-slate-500">Narrow transactions by date or category.</p>
+              </div>
+              <div class="rounded-lg bg-slate-100 p-2 text-slate-500">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16M7 12h10m-7 7h4"></path></svg>
+              </div>
+            </div>
+            <form method="GET" action="{{ url_for('home') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Specific date</span>
+                <input type="date" name="specific_date" value="{{ specific_date|default('') }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Category</span>
+                <select name="category" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                  <option value="">All categories</option>
+                  {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category|default(category|default('')) == cat %}selected{% endif %}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Month</span>
+                <select name="month" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                  <option value="">All months</option>
+                  {% for m in range(1, 13) %}
+                    <option value="{{ m }}" {% if selected_month|string == m|string %}selected{% endif %}>
+                      {{ ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m-1] }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Year</span>
+                <select name="year" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                  <option value="">All years</option>
+                  {% for y in range(2020, 2031) %}
+                    <option value="{{ y }}" {% if selected_year|string == y|string %}selected{% endif %}>{{ y }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Start date</span>
+                <input type="date" name="start_date" value="{{ start_date|default('') }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">End date</span>
+                <input type="date" name="end_date" value="{{ end_date|default('') }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+              </label>
+              <div class="flex flex-wrap items-center gap-2 sm:col-span-2">
+                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">Apply filters</button>
+                <a href="{{ url_for('home') }}" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Reset</a>
+              </div>
+            </form>
+          </div>
+
+          <div id="add-expense" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card xl:col-span-2">
+            <div class="mb-5 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900">Add an expense</h3>
+                <p class="mt-1 text-sm text-slate-500">Record a new transaction.</p>
+              </div>
+            </div>
+            <form method="POST" action="{{ url_for('add') }}" class="space-y-4">
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Description</span>
+                <input name="description" type="text" maxlength="120" required placeholder="e.g. Groceries" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="block text-sm">
+                  <span class="mb-1.5 block font-medium text-slate-700">Amount (₹)</span>
+                  <input name="amount" type="number" min="0.01" step="0.01" required placeholder="500.00" class="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1.5 block font-medium text-slate-700">Date</span>
+                  <input name="date" type="date" value="{{ today|default('') }}" class="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                </label>
+              </div>
+              <label class="block text-sm">
+                <span class="mb-1.5 block font-medium text-slate-700">Category</span>
+                <select name="category" required class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50">
+                  {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                Save expense
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Transactions -->
+        <section id="transactions" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
+          <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="font-semibold text-slate-900">Transactions</h3>
+              <p class="mt-1 text-sm text-slate-500">Manage your expense records.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600">{{ expenses|length }} record(s)</span>
+              <button type="submit" form="bulkDeleteForm" class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-50">
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"></path></svg>
+                Delete selected
+              </button>
+            </div>
+          </div>
+
+          <form id="bulkDeleteForm" method="POST" action="{{ url_for('delete_multiple') }}" onsubmit="return confirmBulkDelete();">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-100 text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th scope="col" class="w-12 px-5 py-4 text-left">
+                      <input type="checkbox" id="selectAll" aria-label="Select all expenses" class="h-4 w-4 rounded border-slate-300 accent-blue-600 focus:ring-blue-500">
+                    </th>
+                    <th scope="col" class="whitespace-nowrap px-4 py-4 text-left font-semibold">Date</th>
+                    <th scope="col" class="px-4 py-4 text-left font-semibold">Description</th>
+                    <th scope="col" class="px-4 py-4 text-left font-semibold">Category</th>
+                    <th scope="col" class="whitespace-nowrap px-5 py-4 text-right font-semibold">Amount</th>
+                    <th scope="col" class="px-5 py-4 text-right font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  {% for e in expenses %}
+                    <tr class="transition hover:bg-slate-50">
+                      <td class="px-5 py-4">
+                        <input type="checkbox" name="expense_ids" value="{{ e.id }}" class="expense-checkbox h-4 w-4 rounded border-slate-300 accent-blue-600 focus:ring-blue-500" aria-label="Select {{ e.description }}">
+                      </td>
+                      <td class="whitespace-nowrap px-4 py-4 text-slate-500">{{ e.date.strftime("%d %b %Y") if e.date else '' }}</td>
+                      <td class="px-4 py-4">
+                        <div class="font-semibold text-slate-800">{{ e.description }}</div>
+                      </td>
+                      <td class="px-4 py-4">
+                        <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ e.category }}</span>
+                      </td>
+                      <td class="whitespace-nowrap px-5 py-4 text-right font-semibold tabular-nums text-slate-900">₹{{ '%.2f'|format(e.amount) }}</td>
+                      <td class="whitespace-nowrap px-5 py-4 text-right">
+                        
+<div class="flex items-center justify-end gap-2">
+  <a
+    href="{{ url_for('edit', expense_id=e.id) }}"
+    class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
+  >
+    Edit
+  </a>
+
+  <button
+    type="button"
+    onclick="deleteOne({{ e.id }}, {{ e.description|tojson }})"
+    class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+  >
+    Delete
+  </button>
+</div>
+
+                      </td>
+                    </tr>
+                  {% else %}
+                    <tr>
+                      <td colspan="6" class="px-5 py-14 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h4"></path></svg>
+                        </div>
+                        <p class="mt-3 font-semibold text-slate-800">No expenses found</p>
+                        <p class="mt-1 text-sm text-slate-500">{% if specific_date or start_date or end_date or request.args.get('category') or selected_month|default('') or selected_year|default('') %}Try changing your filters or reset them.{% else %}Add your first expense using the form above.{% endif %}</p>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </form>
+
+          <div class="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-slate-500">Total for displayed records</p>
+            <p class="text-lg font-bold tabular-nums text-slate-900">₹{{ '%.2f'|format(total) }}</p>
+          </div>
+        </section>
+
+        <!-- Charts -->
+        <section id="analytics" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <div class="mb-5">
+              <h3 class="font-semibold text-slate-900">Expenses by category</h3>
+              <p class="mt-1 text-sm text-slate-500">How spending is split across categories.</p>
+            </div>
+            <div class="relative h-64">
+              <canvas id="catChart" aria-label="Expenses by category chart" role="img"></canvas>
+              <p id="catChartEmpty" class="absolute inset-0 hidden items-center justify-center text-sm text-slate-400">Add expenses to see your category breakdown.</p>
+            </div>
+          </article>
+          <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <div class="mb-5">
+              <h3 class="font-semibold text-slate-900">Spending over time</h3>
+              <p class="mt-1 text-sm text-slate-500">Daily expense totals for the displayed records.</p>
+            </div>
+            <div class="relative h-64">
+              <canvas id="dayChart" aria-label="Spending over time chart" role="img"></canvas>
+              <p id="dayChartEmpty" class="absolute inset-0 hidden items-center justify-center text-sm text-slate-400">Add expenses to see your spending trend.</p>
+            </div>
+          </article>
+        </section>
+
+        <footer class="pb-3 text-center text-xs text-slate-400">
+          ExpenseEase · Simple tracking for everyday spending
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <!-- Hidden single-delete form uses your existing /delete/<id> route -->
+  <form id="singleDeleteForm" method="POST" class="hidden">
+    <input type="hidden" name="expense_id" id="singleDeleteId">
+  </form>
+
+  <script>
+    // Select all visible expense checkboxes.
+    const selectAll = document.getElementById("selectAll");
+    const expenseCheckboxes = Array.from(document.querySelectorAll(".expense-checkbox"));
+    const bulkDeleteButton = document.querySelector('button[form="bulkDeleteForm"]');
+
+    function updateSelectionState() {
+      const checkedCount = expenseCheckboxes.filter(box => box.checked).length;
+      if (selectAll) {
+        selectAll.checked = expenseCheckboxes.length > 0 && checkedCount === expenseCheckboxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < expenseCheckboxes.length;
+      }
+      if (bulkDeleteButton) {
+        bulkDeleteButton.disabled = checkedCount === 0;
+        bulkDeleteButton.classList.toggle("opacity-50", checkedCount === 0);
+        bulkDeleteButton.classList.toggle("cursor-not-allowed", checkedCount === 0);
+      }
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener("change", () => {
+        expenseCheckboxes.forEach(box => { box.checked = selectAll.checked; });
+        updateSelectionState();
+      });
+    }
+
+    expenseCheckboxes.forEach(box => box.addEventListener("change", updateSelectionState));
+    updateSelectionState();
+
+    function confirmBulkDelete() {
+      const count = expenseCheckboxes.filter(box => box.checked).length;
+      if (count === 0) {
+        alert("Please select at least one expense.");
+        return false;
+      }
+      return confirm(`Delete ${count} selected expense(s)? This cannot be undone.`);
+    }
+
+    
+const profileButton = document.getElementById("profileButton");
+const profileMenu = document.getElementById("profileMenu");
+
+if (profileButton && profileMenu) {
+  profileButton.addEventListener("click", function (event) {
+    event.stopPropagation();
+
+    const isOpen = !profileMenu.classList.contains("hidden");
+
+    profileMenu.classList.toggle("hidden", isOpen);
+    profileButton.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  document.addEventListener("click", function (event) {
+    if (
+      !profileMenu.contains(event.target) &&
+      !profileButton.contains(event.target)
+    ) {
+      profileMenu.classList.add("hidden");
+      profileButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      profileMenu.classList.add("hidden");
+      profileButton.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+
+    function deleteOne(id, description) {
+      if (!confirm(`Delete "${description}"? This cannot be undone.`)) return;
+      const form = document.getElementById("singleDeleteForm");
+      form.action = "{{ url_for('delete', expense_id=0) }}".replace(/0$/, String(id));
+      form.submit();
+    }
+
+    // Build chart data from the expenses Flask has already rendered.
+    const expenseRows = [
+      {% for e in expenses %}
+      {
+        description: {{ e.description|tojson }},
+        category: {{ e.category|tojson }},
+        amount: {{ e.amount|float }},
+        date: {{ e.date.strftime("%Y-%m-%d")|tojson if e.date else '""' }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    const categoryTotals = {};
+    const dayTotals = {};
+    expenseRows.forEach(item => {
+      categoryTotals[item.category] = (categoryTotals[item.category] || 0) + item.amount;
+      if (item.date) dayTotals[item.date] = (dayTotals[item.date] || 0) + item.amount;
+    });
+
+    const chartColors = ["#2563eb", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#06b6d4", "#64748b"];
+    const hasExpenses = expenseRows.length > 0;
+
+    if (hasExpenses) {
+      new Chart(document.getElementById("catChart"), {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(categoryTotals),
+          datasets: [{
+            data: Object.values(categoryTotals),
+            backgroundColor: chartColors,
+            borderColor: "#ffffff",
+            borderWidth: 3,
+            hoverOffset: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: {
+            legend: { position: "bottom", labels: { usePointStyle: true, pointStyle: "circle", padding: 18, color: "#64748b", font: { size: 11 } } },
+            tooltip: { callbacks: { label: context => ` ${context.label}: ₹${Number(context.raw).toFixed(2)}` } }
+          }
+        }
+      });
+
+      const sortedDays = Object.keys(dayTotals).sort();
+      new Chart(document.getElementById("dayChart"), {
+        type: "line",
+        data: {
+          labels: sortedDays,
+          datasets: [{
+            label: "Expenses",
+            data: sortedDays.map(day => dayTotals[day]),
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.10)",
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: "#2563eb"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: "index" },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: context => ` ₹${Number(context.raw).toFixed(2)}` } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: "#64748b", maxRotation: 0, autoSkip: true } },
+            y: { beginAtZero: true, grid: { color: "#f1f5f9" }, ticks: { color: "#64748b", callback: value => "₹" + value } }
+          }
+        }
+      });
+    } else {
+      document.getElementById("catChart").classList.add("hidden");
+      document.getElementById("dayChart").classList.add("hidden");
+      document.getElementById("catChartEmpty").classList.remove("hidden");
+      document.getElementById("catChartEmpty").classList.add("flex");
+      document.getElementById("dayChartEmpty").classList.remove("hidden");
+      document.getElementById("dayChartEmpty").classList.add("flex");
+    }
+
+    // Auto-dismiss flash notices after a short delay.
+    window.setTimeout(() => {
+      document.querySelectorAll(".flash-message").forEach(message => {
+        message.style.transition = "opacity 300ms ease";
+        message.style.opacity = "0";
+        window.setTimeout(() => message.remove(), 300);
+      });
+    }, 3500);
+  </script>
+</body>
+</html>

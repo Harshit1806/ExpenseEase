@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics & Charts · ExpenseEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <a href="{{ url_for('home') }}" class="text-sm font-semibold text-blue-600">← Dashboard</a>
+    <h1 class="mt-4 text-3xl font-bold">Analytics & Charts</h1>
+    <p class="mt-2 text-sm text-slate-500">Understand your spending by category and month.</p>
+
+    <section class="mt-6 grid gap-4 sm:grid-cols-3">
+      <article class="rounded-2xl border border-slate-200 bg-white p-5">
+        <p class="text-sm text-slate-500">Total expenses</p>
+        <p class="mt-2 text-2xl font-bold">₹{{ '%.2f'|format(total) }}</p>
+      </article>
+      <article class="rounded-2xl border border-slate-200 bg-white p-5">
+        <p class="text-sm text-slate-500">Transactions</p>
+        <p class="mt-2 text-2xl font-bold">{{ expenses|length }}</p>
+      </article>
+      <article class="rounded-2xl border border-slate-200 bg-white p-5">
+        <p class="text-sm text-slate-500">Average expense</p>
+        <p class="mt-2 text-2xl font-bold">₹{{ '%.2f'|format(average) }}</p>
+      </article>
+    </section>
+
+    <section class="mt-6 grid gap-6 lg:grid-cols-2">
+      <article class="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 class="font-semibold">Expenses by category</h2>
+        <div class="mt-4 h-72">
+          <canvas id="categoryChart"></canvas>
+        </div>
+        {% if not expenses %}
+          <p class="mt-2 text-sm text-slate-500">Add expenses to see your category chart.</p>
+        {% endif %}
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 class="font-semibold">Expenses by month</h2>
+        <div class="mt-4 h-72">
+          <canvas id="monthChart"></canvas>
+        </div>
+        {% if not expenses %}
+          <p class="mt-2 text-sm text-slate-500">Add expenses to see your monthly chart.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    {% if highest %}
+      <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+        <p class="text-sm text-slate-500">Highest expense in the displayed records</p>
+        <p class="mt-2 text-xl font-bold">{{ highest.description }}</p>
+        <p class="mt-1 font-semibold text-blue-600">₹{{ '%.2f'|format(highest.amount) }}</p>
+      </section>
+    {% endif %}
+
+    <a href="{{ url_for('transactions') }}"
+       class="mt-6 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700">
+      View transactions
+    </a>
+  </main>
+
+  <script>
+    const categoryLabels = {{ category_labels|tojson }};
+    const categoryValues = {{ category_values|tojson }};
+    const monthLabels = {{ month_labels|tojson }};
+    const monthValues = {{ month_values|tojson }};
+
+    new Chart(document.getElementById("categoryChart"), {
+      type: "doughnut",
+      data: {
+        labels: categoryLabels,
+        datasets: [{
+          data: categoryValues,
+          backgroundColor: ["#2563eb", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#06b6d4", "#64748b"]
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    new Chart(document.getElementById("monthChart"), {
+      type: "bar",
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: "Expenses (₹)",
+          data: monthValues,
+          backgroundColor: "#3b82f6",
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  </script>
+</body>
+</html>
